@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String
+  passwordHash      String
+  avatarUrl         String?
+  plan              Plan      @default(FREE)
+  isActive          Boolean   @default(true)
+  emailVerified     Boolean   @default(false)
+  currency          String    @default("BRL")
+  monthlyIncomeGoal Decimal?  @db.Decimal(15, 2)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  transactions  Transaction[]
+  categories    Category[]
+  budgets       Budget[]
+  goals         Goal[]
+  conversations AiConversation[]
+  refreshTokens RefreshToken[]
+  alerts        Alert[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String       @id @default(cuid())
+  userId    String?
+  name      String
+  icon      String       @default("tag")
+  color     String       @default("#6366f1")
+  type      CategoryType
+  isSystem  Boolean      @default(false)
+  createdAt DateTime     @default(now())
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@index([userId])
+  @@map("categories")
+}
+
+model Transaction {
+  id            String          @id @default(cuid())
+  userId        String
+  categoryId    String?
+  description   String
+  amount        Decimal         @db.Decimal(15, 2)
+  type          TransactionType
+  date          DateTime
+  notes         String?
+  tags          String[]
+  isRecurring   Boolean         @default(false)
+  recurringFreq String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@index([userId, type])
+  @@index([userId, categoryId])
+  @@map("transactions")
+}
+
+model Budget {
+  id         String   @id @default(cuid())
+  userId     String
+  categoryId String
+  amount     Decimal  @db.Decimal(15, 2)
+  month      Int
+  year       Int
+  alertAt    Int      @default(80)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month, year])
+  @@map("budgets")
+}
+
+model Goal {
+  id            String     @id @default(cuid())
+  userId        String
+  name          String
+  description   String?
+  targetAmount  Decimal    @db.Decimal(15, 2)
+  currentAmount Decimal    @db.Decimal(15, 2) @default(0)
+  deadline      DateTime?
+  status        GoalStatus @default(ACTIVE)
+  icon          String     @default("target")
+  color         String     @default("#10b981")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("goals")
+}
+
+model AiConversation {
+  id        String      @id @default(cuid())
+  userId    String
+  title     String      @default("Nova conversa")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AiMessage[]
+
+  @@index([userId])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String
+  content        String   @db.Text
+  tokensUsed     Int?
+  createdAt      DateTime @default(now())
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
+
+model Alert {
+  id        String    @id @default(cuid())
+  userId    String
+  type      AlertType
+  title     String
+  message   String
+  isRead    Boolean   @default(false)
+  metadata  Json?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("alerts")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+  BOTH
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum AlertType {
+  BUDGET_WARNING
+  BUDGET_EXCEEDED
+  GOAL_MILESTONE
+  UNUSUAL_SPENDING
+  MONTHLY_SUMMARY
+}
