@@ -46,5 +46,6 @@ export function handleApiError(error: unknown) {
     }
   }
 
-  return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+  const message = error instanceof Error ? error.message : String(error)
+  return NextResponse.json({ error: 'Erro interno do servidor', debug: message }, { status: 500 })
 }
