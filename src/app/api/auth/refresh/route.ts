@@ -4,10 +4,10 @@ import {
   verifyRefreshToken,
   signAccessToken,
   signRefreshToken,
-  setAuthCookies,
+  applyAuthCookies,
   getRefreshTokenFromCookies,
 } from '@/lib/auth/jwt'
-import { apiSuccess, apiError } from '@/lib/api'
+import { apiError } from '@/lib/api'
 
 export async function POST(_request: NextRequest) {
   const refreshToken = getRefreshTokenFromCookies()
@@ -49,7 +49,5 @@ export async function POST(_request: NextRequest) {
     },
   })
 
-  setAuthCookies(newAccessToken, newRefreshToken)
-
-  return apiSuccess({ message: 'Token renovado com sucesso' })
+  return applyAuthCookies({ message: 'Token renovado com sucesso' }, 200, newAccessToken, newRefreshToken)
 }

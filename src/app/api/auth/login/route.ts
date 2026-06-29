@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyPassword } from '@/lib/auth/password'
-import { signAccessToken, signRefreshToken, setAuthCookies } from '@/lib/auth/jwt'
+import { signAccessToken, signRefreshToken, applyAuthCookies } from '@/lib/auth/jwt'
 import { loginSchema } from '@/lib/validators'
 import { apiSuccess, apiError, handleApiError } from '@/lib/api'
 
@@ -51,10 +51,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    setAuthCookies(accessToken, refreshToken)
-
     const { passwordHash: _, ...userWithoutPassword } = user
-    return apiSuccess({ user: userWithoutPassword })
+    return applyAuthCookies({ user: userWithoutPassword }, 200, accessToken, refreshToken)
   } catch (error) {
     return handleApiError(error)
   }

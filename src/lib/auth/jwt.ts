@@ -1,8 +1,10 @@
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
 export interface JwtPayload {
   sub: string
@@ -37,25 +39,23 @@ export function verifyRefreshToken(token: string): { sub: string } | null {
   }
 }
 
-export function setAuthCookies(accessToken: string, refreshToken: string) {
-  const cookieStore = cookies()
-  const isProduction = process.env.NODE_ENV === 'production'
-
-  cookieStore.set('access_token', accessToken, {
+export function applyAuthCookies<T>(data: T, status = 200, accessToken: string, refreshToken: string): NextResponse {
+  const response = NextResponse.json({ data }, { status })
+  response.cookies.set('access_token', accessToken, {
     httpOnly: true,
-    secure: isProduction,
+    secure: IS_PRODUCTION,
     sameSite: 'lax',
     maxAge: 60 * 15,
     path: '/',
   })
-
-  cookieStore.set('refresh_token', refreshToken, {
+  response.cookies.set('refresh_token', refreshToken, {
     httpOnly: true,
-    secure: isProduction,
+    secure: IS_PRODUCTION,
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7,
     path: '/',
   })
+  return response
 }
 
 export function clearAuthCookies() {
