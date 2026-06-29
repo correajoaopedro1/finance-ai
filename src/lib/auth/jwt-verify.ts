@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import { jwtVerify } from 'jose'
 
 export interface JwtPayload {
   sub: string
@@ -9,9 +9,11 @@ export interface JwtPayload {
   exp?: number
 }
 
-export function verifyAccessToken(token: string): JwtPayload | null {
+export async function verifyAccessToken(token: string): Promise<JwtPayload | null> {
   try {
-    return jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as JwtPayload
+    const secret = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET!)
+    const { payload } = await jwtVerify(token, secret)
+    return payload as unknown as JwtPayload
   } catch {
     return null
   }

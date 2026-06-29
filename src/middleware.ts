@@ -10,7 +10,7 @@ const PUBLIC_API_ROUTES = [
   '/api/debug',
 ]
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Static assets — skip
@@ -25,7 +25,7 @@ export function middleware(request: NextRequest) {
   // Root → redirect to dashboard or login
   if (pathname === '/') {
     const token = request.cookies.get('access_token')?.value
-    if (token && verifyAccessToken(token)) {
+    if (token && (await verifyAccessToken(token))) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     return NextResponse.redirect(new URL('/login', request.url))
@@ -40,7 +40,7 @@ export function middleware(request: NextRequest) {
   if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
     const token = request.cookies.get('access_token')?.value
     if (token) {
-      const payload = verifyAccessToken(token)
+      const payload = await verifyAccessToken(token)
       if (payload) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
@@ -60,7 +60,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  const payload = verifyAccessToken(token)
+  const payload = await verifyAccessToken(token)
 
   if (!payload) {
     if (pathname.startsWith(PROTECTED_API_PREFIX)) {
