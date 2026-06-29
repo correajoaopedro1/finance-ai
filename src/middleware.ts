@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAccessToken } from '@/lib/auth/jwt'
+import { verifyAccessToken } from '@/lib/auth/jwt-verify'
 
 const PUBLIC_ROUTES = ['/login', '/register']
 const PROTECTED_API_PREFIX = '/api'
