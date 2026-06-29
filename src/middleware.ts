@@ -7,6 +7,7 @@ const PUBLIC_API_ROUTES = [
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/refresh',
+  '/api/debug',
 ]
 
 export function middleware(request: NextRequest) {
